@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  phone     String?  @unique
+  email     String?  @unique
+  createdAt DateTime @default(now())
+
+  expenses   Expense[]
+  categories Category[]
+
+  otps Otp[]
+}
+
+model Category {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  createdAt   DateTime @default(now())
+
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int
+
+  expenses Expense[]
+
+  @@unique([title, userId])
+  @@index([userId])
+}
+
+model Expense {
+  id        Int      @id @default(autoincrement())
+  title     String
+  amount    Decimal  @db.Decimal(10, 2)
+  note      String?
+  createdAt DateTime @default(now())
+
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int
+
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categoryId Int?
+
+  @@index([userId])
+  @@index([categoryId])
+  @@index([createdAt])
+}
+
+model Otp {
+  id Int @id @default(autoincrement())
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  validBy   DateTime
+  otp       String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
