@@ -4,12 +4,15 @@ import SMTPTransport from "nodemailer/lib/smtp-transport";
 const transporter: Transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 465,
-  secure: true,
+  secure: false,
   family: 4,
   auth: {
     user: process.env.MAIL_USER,
     pass: process.env.MAIL_PASS,
   },
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 10000,
 } as SMTPTransport.Options);
 
 export const sendOtp = async (otp: string, email: string) => {
