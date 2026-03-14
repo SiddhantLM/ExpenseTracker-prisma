@@ -9,11 +9,6 @@ interface createExpenseRequest {
 
 interface updateExpenseRequest {
   expense: Expense;
-  id: number;
-}
-
-interface deleteExpenseRequest {
-  id: number;
 }
 
 export const createExpense = async (
@@ -23,11 +18,31 @@ export const createExpense = async (
   try {
     const expense: Expense = req.body.expense;
 
-    if (!expense || !expense.amount || !expense.categoryId || expense.title) {
+    if (
+      expense == null ||
+      !expense.amount ||
+      !expense.categoryId ||
+      !expense.title
+    ) {
       return res.status(400).json({
         message: "Required data missing.",
       });
     }
+
+    const category = await Prisma.category.findFirst({
+      where: {
+        id: expense.categoryId,
+        userId: req.user!.id,
+      },
+    });
+
+    if (!category) {
+      return res.status(500).json({
+        message: "Category doesn't belong to the user.",
+      });
+    }
+
+    expense.userId = req.user!.id;
 
     const newExpense = await Prisma.expense.create({
       data: expense,
@@ -38,6 +53,7 @@ export const createExpense = async (
       expense: newExpense,
     });
   } catch (error) {
+    console.log(error);
     return res.status(500).json({
       message: "Error while adding the expense. Try again later.",
     });
@@ -45,27 +61,26 @@ export const createExpense = async (
 };
 
 export const updateExpense = async (
-  req: Request<{}, {}, updateExpenseRequest>,
+  req: Request<{ id: string }, {}, updateExpenseRequest>,
   res: Response,
 ) => {
   try {
-    const { id } = req.body;
     const expense = req.body.expense;
 
-    if (!id) {
+    if (!req.params.id) {
       return res.status(400).json({
         message: "Expense not provided.",
       });
     }
 
-    if (!expense || !expense.amount || !expense.categoryId || expense.title) {
+    if (!expense || !expense.amount || !expense.categoryId || !expense.title) {
       return res.status(400).json({
         message: "Required data missing.",
       });
     }
 
     const updatedExpense = await Prisma.expense.update({
-      where: { id: id },
+      where: { id: Number(req.params.id) },
       data: expense,
     });
 
@@ -81,19 +96,18 @@ export const updateExpense = async (
 };
 
 export const deleteExpense = async (
-  req: Request<{}, {}, deleteExpenseRequest>,
+  req: Request<{ id: string }>,
   res: Response,
 ) => {
   try {
-    const { id } = req.body;
-    if (!id) {
+    if (!req.params.id) {
       return res.status(400).json({
         message: "Expense not provided.",
       });
     }
 
     await Prisma.expense.delete({
-      where: { id: id },
+      where: { id: Number(req.params.id) },
     });
 
     return res.status(400).json({

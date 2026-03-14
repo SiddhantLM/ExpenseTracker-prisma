@@ -7,13 +7,8 @@ interface createCategoryRequest {
 }
 
 interface updateCategoryRequest {
-  id: number;
   title: string;
   description: string;
-}
-
-interface deleteCategoryRequest {
-  id: number;
 }
 
 export const createCategory = async (
@@ -64,11 +59,11 @@ export const createCategory = async (
 };
 
 export const updateCategory = async (
-  req: Request<{}, {}, updateCategoryRequest>,
+  req: Request<{ id: string }, {}, updateCategoryRequest>,
   res: Response,
 ) => {
   try {
-    const { title, description, id } = req.body;
+    const { title, description } = req.body;
 
     if (!title) {
       return res.status(400).json({
@@ -77,10 +72,10 @@ export const updateCategory = async (
     }
 
     const existingCategory = await Prisma.category.findUnique({
-      where: { id: id },
+      where: { id: Number(req.params.id) },
     });
 
-    if (existingCategory) {
+    if (!existingCategory) {
       return res.status(400).json({
         message: "Category not found.",
       });
@@ -95,15 +90,18 @@ export const updateCategory = async (
       },
     });
 
-    if (existingCategory) {
+    if (
+      existingCategoryTitle &&
+      existingCategoryTitle.id !== existingCategory.id
+    ) {
       return res.status(400).json({
-        message: "Category not found.",
+        message: "Category already present.",
       });
     }
 
     const category = await Prisma.category.update({
       where: {
-        id: id,
+        id: Number(req.params.id),
       },
       data: {
         title: title,
@@ -123,14 +121,12 @@ export const updateCategory = async (
 };
 
 export const deleteCategory = async (
-  req: Request<{}, {}, deleteCategoryRequest>,
+  req: Request<{ id: string }>,
   res: Response,
 ) => {
   try {
-    const { id } = req.body;
-
     const existingCategory = await Prisma.category.findFirst({
-      where: { id: id },
+      where: { id: Number(req.params.id) },
     });
 
     if (!existingCategory) {
@@ -141,7 +137,7 @@ export const deleteCategory = async (
 
     await Prisma.category.delete({
       where: {
-        id: id,
+        id: Number(req.params.id),
       },
     });
 
@@ -151,6 +147,23 @@ export const deleteCategory = async (
   } catch (error) {
     return res.status(500).json({
       message: "Error while creating the category.",
+    });
+  }
+};
+
+export const getAllCategories = async (req: Request, res: Response) => {
+  try {
+    const categories = await Prisma.category.findMany({
+      where: { userId: req.user!.id },
+    });
+
+    return res.status(200).json({
+      message: "Fetched the categories successfully.",
+      categories,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error while fetching the categories.",
     });
   }
 };
