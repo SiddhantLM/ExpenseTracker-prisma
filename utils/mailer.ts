@@ -1,24 +1,10 @@
-import nodemailer, { Transporter } from "nodemailer";
-import SMTPTransport from "nodemailer/lib/smtp-transport";
-
-const transporter: Transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: false,
-  family: 4,
-  auth: {
-    user: process.env.MAIL_USER,
-    pass: process.env.MAIL_PASS,
-  },
-  connectionTimeout: 10000,
-  greetingTimeout: 10000,
-  socketTimeout: 10000,
-} as SMTPTransport.Options);
+import sgMail from "@sendgrid/mail";
+sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
 
 export const sendOtp = async (otp: string, email: string) => {
   try {
-    await transporter.sendMail({
-      from: '"ExpenseTracker" <no-reply@expensetracker.com>',
+    await sgMail.send({
+      from: process.env.SENDGRID_API_EMAIL!,
       to: email,
       subject: "Your OTP for ExpenseTracker",
       text: `Your OTP for ExpenseTracker is ${otp}. It will expire in 10 minutes.`,
