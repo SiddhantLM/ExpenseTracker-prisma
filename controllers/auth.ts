@@ -74,6 +74,8 @@ export const register = async (
       message: "OTP sent successfully.",
     });
   } catch (error) {
+    console.log(error);
+
     res.json({
       status: 500,
       message: "Internal server error. Try again later",
@@ -138,7 +140,6 @@ export const login = async (
       token: token,
     });
   } catch (error) {
-    console.log(error);
     return res.json({
       status: 500,
       message: "Internal server error. Try again later",
